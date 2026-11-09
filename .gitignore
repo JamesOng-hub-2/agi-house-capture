@@ -1,0 +1,16 @@
+# Edge secrets and local data
+edge/.env
+edge/.venv/
+edge/data/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Xcode
+ios/DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# macOS
+.DS_Store
