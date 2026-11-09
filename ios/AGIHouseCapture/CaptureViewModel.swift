@@ -8,6 +8,11 @@ final class CaptureViewModel: ObservableObject {
     @Published private(set) var recordingState: RecordingState = .idle
     @Published private(set) var privacyDiagnostics = PrivacyDiagnostics()
     @Published private(set) var uploadState: UploadState = .idle
+    @Published private(set) var resourceStatus = CaptureResourceStatus(
+        thermalState: "nominal",
+        pressureState: "nominal",
+        targetFramesPerSecond: 30
+    )
 
     let camera = CameraSessionController()
     private let uploadCoordinator = UploadCoordinator(
@@ -37,6 +42,11 @@ final class CaptureViewModel: ObservableObject {
         camera.onPrivacyDiagnostics = { [weak self] diagnostics in
             Task { @MainActor [weak self] in
                 self?.privacyDiagnostics = diagnostics
+            }
+        }
+        camera.onResourceStatus = { [weak self] status in
+            Task { @MainActor [weak self] in
+                self?.resourceStatus = status
             }
         }
     }

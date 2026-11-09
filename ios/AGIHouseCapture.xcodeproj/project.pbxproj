@@ -19,6 +19,8 @@
 		AA000000000000000000000A /* RecordingValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000001A /* RecordingValidator.swift */; };
 		AA000000000000000000000B /* UploadModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000001B /* UploadModels.swift */; };
 		AA000000000000000000000C /* UploadCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000001C /* UploadCoordinator.swift */; };
+		AA000000000000000000000D /* ResidualFaceValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000001E /* ResidualFaceValidator.swift */; };
+		AA000000000000000000000E /* ResourceGovernor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000001F /* ResourceGovernor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +38,8 @@
 		AA000000000000000000001B /* UploadModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadModels.swift; sourceTree = "<group>"; };
 		AA000000000000000000001C /* UploadCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadCoordinator.swift; sourceTree = "<group>"; };
 		AA000000000000000000001D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA000000000000000000001E /* ResidualFaceValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResidualFaceValidator.swift; sourceTree = "<group>"; };
+		AA000000000000000000001F /* ResourceGovernor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceGovernor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,6 +77,8 @@
 				AA000000000000000000001B /* UploadModels.swift */,
 				AA000000000000000000001C /* UploadCoordinator.swift */,
 				AA000000000000000000001D /* Info.plist */,
+				AA000000000000000000001E /* ResidualFaceValidator.swift */,
+				AA000000000000000000001F /* ResourceGovernor.swift */,
 			);
 			path = AGIHouseCapture;
 			sourceTree = "<group>";
@@ -165,6 +171,8 @@
 				AA000000000000000000000A /* RecordingValidator.swift in Sources */,
 				AA000000000000000000000B /* UploadModels.swift in Sources */,
 				AA000000000000000000000C /* UploadCoordinator.swift in Sources */,
+				AA000000000000000000000D /* ResidualFaceValidator.swift in Sources */,
+				AA000000000000000000000E /* ResourceGovernor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

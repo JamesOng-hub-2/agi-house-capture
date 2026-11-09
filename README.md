@@ -14,7 +14,7 @@ The iPhone records task episodes and anonymizes sensitive visual data on-device.
 
 ### Phone
 
-- Record egocentric task episodes at roughly 10 fps.
+- Record egocentric task episodes at 720p/30 fps, adapting to 24 or 15 fps under device pressure.
 - Blur faces before data leaves the phone.
 - Detect hand poses and provide capture-quality prompts.
 - Send episodes to the edge server over the local network.
@@ -72,6 +72,12 @@ Open `http://localhost:8000/review`.
 
 Episode metadata and gate results are stored in PostgreSQL through SQLAlchemy.
 Schema changes are managed with Alembic migrations.
+
+Optional Phase 4 settings in `edge/.env`:
+
+- `BUYER_GATE_PLUGIN` selects a versioned buyer gate by dotted Python path.
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `SUPABASE_BUCKET` enable approved-only cloud upload.
+- Apply `edge/supabase/schema.sql` in Supabase before enabling cloud upload. Keep the service-role key on the laptop only.
 
 ### iOS app
 

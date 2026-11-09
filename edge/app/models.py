@@ -31,6 +31,19 @@ class Episode(Base):
     checksum_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     decision: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     reason: Mapped[str] = mapped_column(Text, nullable=False)
+    gate_version: Mapped[str] = mapped_column(String(128), nullable=False)
+    gate_details: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    cloud_status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="not_approved",
+        server_default="not_approved",
+    )
+    cloud_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    uploaded_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,

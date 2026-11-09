@@ -6,39 +6,58 @@
     <title>Episode review · AGI House Capture</title>
     <style>
       :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
-      body { margin: 0 auto; max-width: 960px; padding: 2rem; }
-      table { border-collapse: collapse; width: 100%; }
-      th, td { border-bottom: 1px solid #8886; padding: .75rem; text-align: left; }
+      body { margin: 0 auto; max-width: 1100px; padding: 2rem; }
+      .grid { display: grid; gap: 1rem; }
+      article { border: 1px solid #8886; border-radius: .75rem; padding: 1rem; }
+      video { background: #000; border-radius: .5rem; width: 100%; max-height: 420px; }
+      dl { display: grid; grid-template-columns: max-content 1fr; gap: .35rem 1rem; }
+      dt { color: #888; }
+      dd { margin: 0; overflow-wrap: anywhere; }
+      form { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+      input, select, button { font: inherit; padding: .5rem; }
+      input { flex: 1 1 20rem; }
+      .danger { color: #d33; }
       .empty { border: 1px dashed #8888; border-radius: .75rem; padding: 2rem; }
     </style>
   </head>
   <body>
     <h1>Episode review</h1>
+    <p>
+      Cloud uploads:
+      <strong>{{ "enabled" if supabase_enabled else "not configured" }}</strong>
+    </p>
     {% if episodes %}
-      <table>
-        <thead>
-          <tr>
-            <th>Episode</th>
-            <th>Task</th>
-            <th>Size</th>
-            <th>Decision</th>
-            <th>Reason</th>
-            <th>Checksum</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for episode in episodes %}
-            <tr>
-              <td>{{ episode.id }}</td>
-              <td>{{ episode.task_id }}</td>
-              <td>{{ episode.size_bytes }} bytes</td>
-              <td>{{ episode.decision }}</td>
-              <td>{{ episode.reason }}</td>
-              <td><code>{{ episode.checksum_sha256[:12] }}</code></td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <div class="grid">
+        {% for episode in episodes %}
+          <article>
+            <video controls preload="metadata" src="/episodes/{{ episode.id }}/video"></video>
+            <dl>
+              <dt>Episode</dt><dd><code>{{ episode.id }}</code></dd>
+              <dt>Task</dt><dd>{{ episode.task_id }}</dd>
+              <dt>Size</dt><dd>{{ episode.size_bytes }} bytes</dd>
+              <dt>Decision</dt><dd><strong>{{ episode.decision }}</strong></dd>
+              <dt>Reason</dt><dd>{{ episode.reason }}</dd>
+              <dt>Gate</dt><dd>{{ episode.gate_version }}</dd>
+              <dt>Cloud</dt><dd>{{ episode.cloud_status }}</dd>
+              <dt>Checksum</dt><dd><code>{{ episode.checksum_sha256 }}</code></dd>
+            </dl>
+
+            <form method="post" action="/episodes/{{ episode.id }}/decision">
+              <select name="decision" aria-label="Decision">
+                <option value="accepted">Accept</option>
+                <option value="rejected">Reject</option>
+                <option value="review" selected>Keep in review</option>
+              </select>
+              <input name="reason" required maxlength="1000" value="Human review">
+              <button type="submit">Save decision</button>
+            </form>
+
+            <form method="post" action="/episodes/{{ episode.id }}/delete">
+              <button class="danger" type="submit">Delete everywhere</button>
+            </form>
+          </article>
+        {% endfor %}
+      </div>
     {% else %}
       <p class="empty">No episodes received yet.</p>
     {% endif %}

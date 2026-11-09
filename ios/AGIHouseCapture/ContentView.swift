@@ -89,11 +89,19 @@ struct ContentView: View {
             }
 
             HStack {
-                Text("720p · up to 30 fps · no audio")
+                Text(
+                    "720p · \(viewModel.resourceStatus.targetFramesPerSecond) fps · no audio"
+                )
                 Spacer()
                 Text("Dropped \(viewModel.diagnostics.droppedFrames)")
             }
             .font(.caption.monospaced())
+
+            Text(
+                "Thermal \(viewModel.resourceStatus.thermalState) · pressure \(viewModel.resourceStatus.pressureState)"
+            )
+            .font(.caption2.monospaced())
+            .foregroundStyle(.secondary)
 
             Text("The preview is raw. Saved MP4 files contain only separately rendered sanitized frames.")
                 .font(.caption)

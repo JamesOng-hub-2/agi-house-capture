@@ -2,13 +2,14 @@
 import CoreMedia
 import Foundation
 
-final class CameraSessionController: NSObject {
+final class CameraSessionController: NSObject, @unchecked Sendable {
     let session = AVCaptureSession()
 
     var onStateChange: (@Sendable (CaptureState) -> Void)?
     var onDiagnostics: (@Sendable (CaptureDiagnostics) -> Void)?
     var onRecordingStateChange: (@Sendable (RecordingState) -> Void)?
     var onPrivacyDiagnostics: (@Sendable (PrivacyDiagnostics) -> Void)?
+    var onResourceStatus: (@Sendable (CaptureResourceStatus) -> Void)?
 
     private let sessionQueue = DispatchQueue(label: "capture.session", qos: .userInitiated)
     private let outputQueue = DispatchQueue(label: "capture.output", qos: .userInitiated)
@@ -18,6 +19,8 @@ final class CameraSessionController: NSObject {
 
     private let videoOutput = AVCaptureVideoDataOutput()
     private let anonymizer = FrameAnonymizer()
+    private let resourceGovernor = ResourceGovernor()
+    private var captureDevice: AVCaptureDevice?
     private var isConfigured = false
     private var diagnostics = CaptureDiagnostics()
     private var privacyDiagnostics = PrivacyDiagnostics()
@@ -98,6 +101,7 @@ final class CameraSessionController: NSObject {
                     Task {
                         do {
                             _ = try await RecordingValidator.validate(url)
+                            try await ResidualFaceValidator.validate(url)
                             self.emitRecording(.saved(url))
                         } catch {
                             try? FileManager.default.removeItem(at: url)
@@ -130,6 +134,7 @@ final class CameraSessionController: NSObject {
             throw CameraError.cannotAddInput
         }
         session.addInput(input)
+        captureDevice = camera
 
         try camera.lockForConfiguration()
         let frameDuration = CMTime(value: 1, timescale: 30)
@@ -152,6 +157,32 @@ final class CameraSessionController: NSObject {
         if let connection = videoOutput.connection(with: .video),
            connection.isVideoRotationAngleSupported(90) {
             connection.videoRotationAngle = 90
+        }
+
+        resourceGovernor.onChange = { [weak self] status in
+            guard let self else { return }
+            self.sessionQueue.async {
+                self.applyResourceStatus(status)
+            }
+            self.onResourceStatus?(status)
+        }
+        resourceGovernor.startMonitoring(camera)
+    }
+
+    private func applyResourceStatus(_ status: CaptureResourceStatus) {
+        guard let captureDevice else { return }
+
+        do {
+            try captureDevice.lockForConfiguration()
+            let duration = CMTime(
+                value: 1,
+                timescale: CMTimeScale(status.targetFramesPerSecond)
+            )
+            captureDevice.activeVideoMinFrameDuration = duration
+            captureDevice.activeVideoMaxFrameDuration = duration
+            captureDevice.unlockForConfiguration()
+        } catch {
+            emit(.failed("Capture pressure adjustment failed: \(error.localizedDescription)"))
         }
     }
 

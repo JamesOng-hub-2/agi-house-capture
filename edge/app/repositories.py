@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -20,6 +22,9 @@ class EpisodeRepository:
             )
         )
 
+    def get(self, episode_id: uuid.UUID) -> Episode | None:
+        return self._session.get(Episode, episode_id)
+
     def add(self, episode: Episode) -> Episode:
         self._session.add(episode)
         self._session.commit()
@@ -28,3 +33,13 @@ class EpisodeRepository:
 
     def rollback(self) -> None:
         self._session.rollback()
+
+    def save(self, episode: Episode) -> Episode:
+        self._session.add(episode)
+        self._session.commit()
+        self._session.refresh(episode)
+        return episode
+
+    def delete(self, episode: Episode) -> None:
+        self._session.delete(episode)
+        self._session.commit()
