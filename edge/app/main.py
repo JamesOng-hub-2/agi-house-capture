@@ -1,29 +1,37 @@
 import hashlib
 import json
-import os
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import Annotated
-from uuid import uuid4
+from uuid import UUID, uuid4
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, status
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+    status,
+)
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
+from .config import settings
+from .database import get_session
 from .gate import evaluate_episode
-from .store import EpisodeStore, StoredEpisode
+from .models import Episode as EpisodeRecord
+from .repositories import EpisodeRepository
 
 APP_DIR = Path(__file__).resolve().parent
-EDGE_DIR = APP_DIR.parent
-EPISODE_DIR = EDGE_DIR / os.getenv("EPISODE_DIR", "data/episodes")
-DATABASE_PATH = EDGE_DIR / os.getenv("DATABASE_PATH", "data/episodes.sqlite3")
-MIN_EPISODE_BYTES = int(os.getenv("MIN_EPISODE_BYTES", "1024"))
-MAX_EPISODE_BYTES = int(os.getenv("MAX_EPISODE_BYTES", str(500 * 1024 * 1024)))
 
 app = FastAPI(title="AGI House Capture Edge", version="0.1.0")
 templates = Jinja2Templates(directory=APP_DIR / "templates")
-store = EpisodeStore(DATABASE_PATH)
 
 
 class Task(BaseModel):
@@ -44,15 +52,17 @@ class EpisodeManifest(BaseModel):
     anonymizer_version: str
 
 
-class Episode(BaseModel):
-    id: str
+class EpisodeResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
     task_id: str
     filename: str
     size_bytes: int
     checksum_sha256: str
     decision: str
     reason: str
-    created_at: str
+    created_at: datetime
     manifest: EpisodeManifest
 
 
@@ -63,9 +73,14 @@ TASKS = [
         instructions="Pick up the object and place it in the marked target area.",
     )
 ]
+
+
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+def health(
+    session: Annotated[Session, Depends(get_session)],
+) -> dict[str, str]:
+    session.execute(text("SELECT 1"))
+    return {"status": "ok", "database": "postgresql"}
 
 
 @app.get("/tasks")
@@ -74,8 +89,14 @@ def list_tasks() -> list[Task]:
 
 
 @app.get("/episodes")
-def list_episodes() -> list[Episode]:
-    return [Episode.model_validate(episode.as_dict()) for episode in store.list()]
+def list_episodes(
+    session: Annotated[Session, Depends(get_session)],
+) -> list[EpisodeResponse]:
+    repository = EpisodeRepository(session)
+    return [
+        EpisodeResponse.model_validate(episode)
+        for episode in repository.list()
+    ]
 
 
 @app.post("/episodes")
@@ -84,15 +105,17 @@ async def create_episode(
     checksum_sha256: Annotated[str, Form(pattern=r"^[0-9a-f]{64}$")],
     manifest: Annotated[str, Form()],
     video: Annotated[UploadFile, File()],
-) -> Episode:
-    existing = store.get_by_idempotency_key(idempotency_key)
+    session: Annotated[Session, Depends(get_session)],
+) -> EpisodeResponse:
+    repository = EpisodeRepository(session)
+    existing = repository.get_by_idempotency_key(idempotency_key)
     if existing:
         if existing.checksum_sha256 != checksum_sha256:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Idempotency key already belongs to different content.",
             )
-        return Episode.model_validate(existing.as_dict())
+        return EpisodeResponse.model_validate(existing)
 
     try:
         parsed_manifest = EpisodeManifest.model_validate_json(manifest)
@@ -108,18 +131,20 @@ async def create_episode(
             detail="Manifest episode_id must match the idempotency key.",
         )
 
-    episode_id = str(uuid4())
-    EPISODE_DIR.mkdir(parents=True, exist_ok=True)
-    staging = EPISODE_DIR / f".{episode_id}.uploading"
-    destination = EPISODE_DIR / f"{episode_id}.mp4"
+    episode_id = uuid4()
+    episode_directory = settings.resolved_episode_dir
+    episode_directory.mkdir(parents=True, exist_ok=True)
+    staging = episode_directory / f".{episode_id}.uploading"
+    destination = episode_directory / f"{episode_id}.mp4"
 
     digest = hashlib.sha256()
     size_bytes = 0
+    committed = False
     try:
         with staging.open("wb") as output:
             while chunk := await video.read(1024 * 1024):
                 size_bytes += len(chunk)
-                if size_bytes > MAX_EPISODE_BYTES:
+                if size_bytes > settings.max_episode_bytes:
                     raise HTTPException(
                         status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                         detail="Episode exceeds the configured size limit.",
@@ -136,11 +161,11 @@ async def create_episode(
 
         result = evaluate_episode(
             size_bytes=size_bytes,
-            minimum_size_bytes=MIN_EPISODE_BYTES,
+            minimum_size_bytes=settings.min_episode_bytes,
         )
         staging.replace(destination)
 
-        stored = StoredEpisode(
+        stored = EpisodeRecord(
             id=episode_id,
             idempotency_key=idempotency_key,
             task_id=parsed_manifest.task_id,
@@ -149,22 +174,35 @@ async def create_episode(
             checksum_sha256=measured_checksum,
             decision=result.decision,
             reason=result.reason,
-            created_at=datetime.now(UTC).isoformat(),
             manifest=parsed_manifest.model_dump(),
         )
-        store.insert(stored)
-        return Episode.model_validate(stored.as_dict())
+        try:
+            repository.add(stored)
+            committed = True
+        except IntegrityError:
+            repository.rollback()
+            duplicate = repository.get_by_idempotency_key(idempotency_key)
+            if duplicate and duplicate.checksum_sha256 == checksum_sha256:
+                destination.unlink(missing_ok=True)
+                return EpisodeResponse.model_validate(duplicate)
+            raise
+
+        return EpisodeResponse.model_validate(stored)
     except Exception:
         staging.unlink(missing_ok=True)
-        if not store.get_by_idempotency_key(idempotency_key):
+        if not committed:
             destination.unlink(missing_ok=True)
         raise
 
 
 @app.get("/review", response_class=HTMLResponse)
-def review(request: Request) -> HTMLResponse:
+def review(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+) -> HTMLResponse:
+    repository = EpisodeRepository(session)
     return templates.TemplateResponse(
         request=request,
         name="review.html",
-        context={"episodes": store.list()},
+        context={"episodes": repository.list()},
     )

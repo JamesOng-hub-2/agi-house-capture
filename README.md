@@ -63,10 +63,15 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-uvicorn app.main:app --reload --host 0.0.0.0
+docker compose up -d
+alembic upgrade head
+uvicorn app.main:app --reload --host 0.0.0.0 --env-file .env
 ```
 
 Open `http://localhost:8000/review`.
+
+Episode metadata and gate results are stored in PostgreSQL through SQLAlchemy.
+Schema changes are managed with Alembic migrations.
 
 ### iOS app
 
