@@ -13,6 +13,10 @@
 		AA0000000000000000000004 /* CameraSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000014 /* CameraSessionController.swift */; };
 		AA0000000000000000000005 /* CaptureState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000015 /* CaptureState.swift */; };
 		AA0000000000000000000006 /* CaptureViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000016 /* CaptureViewModel.swift */; };
+		AA0000000000000000000007 /* RecordingState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000017 /* RecordingState.swift */; };
+		AA0000000000000000000008 /* FrameAnonymizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000018 /* FrameAnonymizer.swift */; };
+		AA0000000000000000000009 /* EpisodeWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000019 /* EpisodeWriter.swift */; };
+		AA000000000000000000000A /* RecordingValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000001A /* RecordingValidator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -23,6 +27,10 @@
 		AA0000000000000000000014 /* CameraSessionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraSessionController.swift; sourceTree = "<group>"; };
 		AA0000000000000000000015 /* CaptureState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureState.swift; sourceTree = "<group>"; };
 		AA0000000000000000000016 /* CaptureViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureViewModel.swift; sourceTree = "<group>"; };
+		AA0000000000000000000017 /* RecordingState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingState.swift; sourceTree = "<group>"; };
+		AA0000000000000000000018 /* FrameAnonymizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameAnonymizer.swift; sourceTree = "<group>"; };
+		AA0000000000000000000019 /* EpisodeWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodeWriter.swift; sourceTree = "<group>"; };
+		AA000000000000000000001A /* RecordingValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingValidator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,6 +61,10 @@
 				AA0000000000000000000014 /* CameraSessionController.swift */,
 				AA0000000000000000000015 /* CaptureState.swift */,
 				AA0000000000000000000016 /* CaptureViewModel.swift */,
+				AA0000000000000000000017 /* RecordingState.swift */,
+				AA0000000000000000000018 /* FrameAnonymizer.swift */,
+				AA0000000000000000000019 /* EpisodeWriter.swift */,
+				AA000000000000000000001A /* RecordingValidator.swift */,
 			);
 			path = AGIHouseCapture;
 			sourceTree = "<group>";
@@ -139,6 +151,10 @@
 				AA0000000000000000000004 /* CameraSessionController.swift in Sources */,
 				AA0000000000000000000005 /* CaptureState.swift in Sources */,
 				AA0000000000000000000006 /* CaptureViewModel.swift in Sources */,
+				AA0000000000000000000007 /* RecordingState.swift in Sources */,
+				AA0000000000000000000008 /* FrameAnonymizer.swift in Sources */,
+				AA0000000000000000000009 /* EpisodeWriter.swift in Sources */,
+				AA000000000000000000000A /* RecordingValidator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

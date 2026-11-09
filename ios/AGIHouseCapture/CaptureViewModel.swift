@@ -5,6 +5,8 @@ import Foundation
 final class CaptureViewModel: ObservableObject {
     @Published private(set) var state: CaptureState = .idle
     @Published private(set) var diagnostics = CaptureDiagnostics()
+    @Published private(set) var recordingState: RecordingState = .idle
+    @Published private(set) var privacyDiagnostics = PrivacyDiagnostics()
 
     let camera = CameraSessionController()
 
@@ -17,6 +19,16 @@ final class CaptureViewModel: ObservableObject {
         camera.onDiagnostics = { [weak self] diagnostics in
             Task { @MainActor [weak self] in
                 self?.diagnostics = diagnostics
+            }
+        }
+        camera.onRecordingStateChange = { [weak self] state in
+            Task { @MainActor [weak self] in
+                self?.recordingState = state
+            }
+        }
+        camera.onPrivacyDiagnostics = { [weak self] diagnostics in
+            Task { @MainActor [weak self] in
+                self?.privacyDiagnostics = diagnostics
             }
         }
     }
@@ -44,5 +56,13 @@ final class CaptureViewModel: ObservableObject {
 
     func suspend() {
         camera.stop()
+    }
+
+    func toggleRecording() {
+        if recordingState.isRecording {
+            camera.stopRecording()
+        } else if state == .previewing {
+            camera.startRecording()
+        }
     }
 }

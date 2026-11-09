@@ -23,6 +23,9 @@ struct ContentView: View {
             VStack(spacing: 16) {
                 statusHeader
                 Spacer()
+                recordingStatus
+                savedEpisodeAction
+                recordButton
                 diagnosticsPanel
             }
             .padding()
@@ -73,19 +76,25 @@ struct ContentView: View {
 
     private var diagnosticsPanel: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Phase 1 · Raw preview only")
+            Text("Phase 2 · Sanitized recording")
                 .font(.headline)
 
             HStack {
-                metric("Processed", value: viewModel.diagnostics.processedFrames)
+                metric("Sanitized", value: viewModel.privacyDiagnostics.sanitizedFrames)
                 Divider().frame(height: 32)
-                metric("Dropped", value: viewModel.diagnostics.droppedFrames)
-                Spacer()
-                Text("720p · 30 fps")
-                    .font(.caption.monospaced())
+                metric("Faces", value: viewModel.privacyDiagnostics.detectedFaces)
+                Divider().frame(height: 32)
+                metric("Fallbacks", value: viewModel.privacyDiagnostics.fullFrameFallbacks)
             }
 
-            Text("Frames are held briefly in bounded memory and are not saved or uploaded.")
+            HStack {
+                Text("720p · up to 30 fps · no audio")
+                Spacer()
+                Text("Dropped \(viewModel.diagnostics.droppedFrames)")
+            }
+            .font(.caption.monospaced())
+
+            Text("The preview is raw. Saved MP4 files contain only separately rendered sanitized frames.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -101,6 +110,70 @@ struct ContentView: View {
             Text(label)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+        }
+    }
+
+    private var recordingStatus: some View {
+        Text(recordingStatusText)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(.black.opacity(0.55), in: Capsule())
+    }
+
+    @ViewBuilder
+    private var savedEpisodeAction: some View {
+        if case let .saved(url) = viewModel.recordingState {
+            ShareLink(item: url) {
+                Label("Inspect sanitized video", systemImage: "square.and.arrow.up")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.borderedProminent)
+        }
+    }
+
+    private var recordButton: some View {
+        Button {
+            viewModel.toggleRecording()
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(.white)
+                    .frame(width: 76, height: 76)
+                if viewModel.recordingState.isRecording {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(.red)
+                        .frame(width: 30, height: 30)
+                } else {
+                    Circle()
+                        .fill(.red)
+                        .frame(width: 62, height: 62)
+                }
+            }
+        }
+        .disabled(
+            viewModel.state != .previewing ||
+            viewModel.recordingState == .finalizing
+        )
+        .opacity(viewModel.state == .previewing ? 1 : 0.5)
+        .accessibilityLabel(viewModel.recordingState.isRecording ? "Stop recording" : "Start recording")
+    }
+
+    private var recordingStatusText: String {
+        switch viewModel.recordingState {
+        case .idle:
+            "Ready to record"
+        case .starting:
+            "Starting privacy pipeline"
+        case .recording:
+            "Recording sanitized frames"
+        case .finalizing:
+            "Validating sanitized video"
+        case let .saved(url):
+            "Saved \(url.lastPathComponent)"
+        case let .failed(message):
+            "Recording failed: \(message)"
         }
     }
 
