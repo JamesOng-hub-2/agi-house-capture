@@ -23,6 +23,7 @@
             <th>Size</th>
             <th>Decision</th>
             <th>Reason</th>
+            <th>Checksum</th>
           </tr>
         </thead>
         <tbody>
@@ -33,6 +34,7 @@
               <td>{{ episode.size_bytes }} bytes</td>
               <td>{{ episode.decision }}</td>
               <td>{{ episode.reason }}</td>
+              <td><code>{{ episode.checksum_sha256[:12] }}</code></td>
             </tr>
           {% endfor %}
         </tbody>

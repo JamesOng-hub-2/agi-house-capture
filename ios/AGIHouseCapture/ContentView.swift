@@ -27,6 +27,7 @@ struct ContentView: View {
                 savedEpisodeAction
                 recordButton
                 diagnosticsPanel
+                uploadPanel
             }
             .padding()
         }
@@ -124,13 +125,44 @@ struct ContentView: View {
 
     @ViewBuilder
     private var savedEpisodeAction: some View {
-        if case let .saved(url) = viewModel.recordingState {
+        if case let .saved(url) = viewModel.recordingState,
+           FileManager.default.fileExists(atPath: url.path) {
             ShareLink(item: url) {
                 Label("Inspect sanitized video", systemImage: "square.and.arrow.up")
                     .font(.subheadline.weight(.semibold))
             }
             .buttonStyle(.borderedProminent)
         }
+    }
+
+    private var uploadPanel: some View {
+        HStack(spacing: 12) {
+            Image(systemName: uploadSymbol)
+                .foregroundStyle(uploadColor)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(viewModel.uploadState.title)
+                    .font(.subheadline.weight(.semibold))
+                if let detail = viewModel.uploadState.detail {
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+
+            Spacer()
+
+            if case .queued = viewModel.uploadState {
+                Button("Retry") {
+                    viewModel.retryUploads()
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .foregroundStyle(.white)
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private var recordButton: some View {
@@ -185,6 +217,34 @@ struct ContentView: View {
             .red
         case .interrupted:
             .orange
+        default:
+            .white
+        }
+    }
+
+    private var uploadSymbol: String {
+        switch viewModel.uploadState {
+        case .idle:
+            "tray"
+        case .preparing:
+            "gearshape"
+        case .queued:
+            "clock.arrow.circlepath"
+        case .uploading:
+            "arrow.up.circle.fill"
+        case let .completed(decision, _):
+            decision == "accepted" ? "checkmark.circle.fill" : "checkmark.circle"
+        }
+    }
+
+    private var uploadColor: Color {
+        switch viewModel.uploadState {
+        case .queued:
+            .orange
+        case .uploading:
+            .blue
+        case let .completed(decision, _):
+            decision == "rejected" ? .red : .green
         default:
             .white
         }

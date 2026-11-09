@@ -4,6 +4,9 @@ import Foundation
 struct RecordingValidation: Sendable {
     let durationSeconds: Double
     let fileSizeBytes: Int64
+    let width: Int
+    let height: Int
+    let nominalFrameRate: Float
 }
 
 enum RecordingValidator {
@@ -29,9 +32,18 @@ enum RecordingValidator {
             throw RecordingValidationError.emptyFile
         }
 
+        let videoTrack = videoTracks[0]
+        let naturalSize = try await videoTrack.load(.naturalSize)
+        let preferredTransform = try await videoTrack.load(.preferredTransform)
+        let displayedSize = naturalSize.applying(preferredTransform)
+        let nominalFrameRate = try await videoTrack.load(.nominalFrameRate)
+
         return RecordingValidation(
             durationSeconds: duration.seconds,
-            fileSizeBytes: fileSize
+            fileSizeBytes: fileSize,
+            width: Int(abs(displayedSize.width)),
+            height: Int(abs(displayedSize.height)),
+            nominalFrameRate: nominalFrameRate
         )
     }
 }
