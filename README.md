@@ -42,6 +42,8 @@ The laptop receives anonymized episodes, independently checks that anonymization
 
 ## Build order
 
+Detailed implementation plans live in [`plans/`](plans/README.md).
+
 1. Set up the Python environment, local network, model download, and Supabase resources.
 2. Build the edge server and gate rules; finish when an episode request returns a gate result.
 3. Build the iPhone capture, anonymization, hand-pose, and upload flow.
